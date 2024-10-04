@@ -1,0 +1,17 @@
+# Ignore build directories
+/build/
+/Release/
+
+# Ignore CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Ignore compiled output
+*.o
+*.out
+*.exe
+*.ppm  # Your output image file
+
+# Ignore VSCode settings
+.vscode/
