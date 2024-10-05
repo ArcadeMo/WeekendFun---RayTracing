@@ -1,8 +1,6 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
-#include "ray.h"
-
 // Defines a class to store informatiuon about a ray-object intersection
 class hitRecord { 
 public: 
@@ -35,7 +33,7 @@ public:
     // Determines if a ray hits the object within range [raytMin, raytMax]
     // hitRecord stores the intersection details if a hit occurs
     // const = 0 makes hittable an abstract class, meaning you can't instantiate it directly but can derive other classes from it that implement hit()
-    virtual bool hit(const ray& r, double raytMin, double raytMax, hitRecord& rec) const = 0;
+    virtual bool hit(const ray& r, interval rayT, hitRecord& rec) const = 0;
 };
 
 #endif

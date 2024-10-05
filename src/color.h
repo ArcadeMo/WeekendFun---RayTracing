@@ -3,8 +3,6 @@
 
 #include "vec3.h"
 
-#include <iostream>
-
 using color = vec3;
 
 // Defines the writeColor function that writes a color (which is a vec3) to an output stream

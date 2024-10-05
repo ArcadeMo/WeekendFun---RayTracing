@@ -1,8 +1,7 @@
-#include <iostream>
-
-#include "color.h"
-#include "ray.h"
-#include "vec3.h"
+#include "utils.h"
+#include "hittable.h"
+#include "hittableList.h"
+#include "sphere.h"
 
 // Function to determine if a given ray hits a sphere; returns true if the ray intersects the sphere
     // bool hitSphere(const point3& center, double radius, const ray& r) {
@@ -41,41 +40,48 @@
 //     }
 
 // Simplified function to determine if a given ray hits a sphere; this time returns the t value where the intersection occurs or -1 if there is no intersection
-double hitSphere(const point3& center, double radius, const ray& r) {
-    // oc represents the vector from the ray's origin to the sphere's center
-    vec3 oc = center - r.origin();
-    // a is the squraed length of the ray's direction vector which is the equivalent to the dot product of the direction vector with itself
-    auto a = r.direction().squaredLength();
-    // h is the dot product of the direction and the oc vector, calculating how aligned oc is with the ray's direction
-    auto h = dot(r.direction(), oc);
-    // c calculates the squared distance from the sphere's center to the ray's origin minus the sphere's radius squared
-    auto c = oc.squaredLength() - radius*radius;
-    // The discriminant of the quadratic equation determines where the ray intersects the sphere; if it is greater than or equal to 0 the ray intersects the sphere
-    auto discriminant = h*h - a*c;
+    // double hitSphere(const point3& center, double radius, const ray& r) {
+    //     // oc represents the vector from the ray's origin to the sphere's center
+    //     vec3 oc = center - r.origin();
+    //     // a is the squraed length of the ray's direction vector which is the equivalent to the dot product of the direction vector with itself
+    //     auto a = r.direction().squaredLength();
+    //     // h is the dot product of the direction and the oc vector, calculating how aligned oc is with the ray's direction
+    //     auto h = dot(r.direction(), oc);
+    //     // c calculates the squared distance from the sphere's center to the ray's origin minus the sphere's radius squared
+    //     auto c = oc.squaredLength() - radius*radius;
+    //     // The discriminant of the quadratic equation determines where the ray intersects the sphere; if it is greater than or equal to 0 the ray intersects the sphere
+    //     auto discriminant = h*h - a*c;
 
-    // Checks if the discriminant is less than zero; meaning theres no intersection; return -1
-    if (discriminant < 0) {
-        return -1.0;
-    // Else return the smaller root of the quadratic equation; which represents the nearest intersection point
-    } else {
-        return (h - std::sqrt(discriminant)) / a;
-    }
-}
+// Old ray color function to calculate the color at the end of the ray if there is intersection
+    // color rayColor(const ray& r) {
+    //     // Checks if the ray intersects with a sphere with a radius of 0.5 located at position 0,0,-1
+    //         // if (hitSphere(point3(0,0,-1), 0.5, r))
+    //         //     return color(1,0,0);
 
-// Function to calculate the color at the end of the ray if there is intersection
-color rayColor(const ray& r) {
-    // Checks if the ray intersects with a sphere with a radius of 0.5 located at position 0,0,-1
-        // if (hitSphere(point3(0,0,-1), 0.5, r))
-        //     return color(1,0,0);
+    //     // Calls the hitSphere function to check if the ray intersects with the sphere; t holds the insection point's parameter value along the ray
+    //     auto t = hitSphere(point3(0,0,-1), 0.5, r);
+    //     // Checks if there is a valid intersection
+    //     if (t > 0.0) {
+    //         // N is the normal vector at the point of intersection, pointing outward from the sphere's surface
+    //         vec3 N = unitVector(r.at(t) - vec3(0,0,-1));
+    //         // Converts the normal bector's components to the range of [0,1], scales them to create a color and returns it
+    //         return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
+    //     }
 
-    // Calls the hitSphere function to check if the ray intersects with the sphere; t holds the insection point's parameter value along the ray
-    auto t = hitSphere(point3(0,0,-1), 0.5, r);
-    // Checks if there is a valid intersection
-    if (t > 0.0) {
-        // N is the normal vector at the point of intersection, pointing outward from the sphere's surface
-        vec3 N = unitVector(r.at(t) - vec3(0,0,-1));
-        // Converts the normal bector's components to the range of [0,1], scales them to create a color and returns it
-        return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
+    //     vec3 unitDirection = unitVector(r.direction());
+    //     auto a = 0.5*(unitDirection.y() + 1.0);
+    //     return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+    // }
+
+// Defines a function that returns the color of a ray r after checking for intersections with objects in the scene (world)
+color rayColor (const ray& r, const hittable& world) {
+    // Creates a hitRecord object rec to store details of a possible hit (intersection) between the ray and any object in the world
+    hitRecord rec;
+    // Checks if the ray r intersects with any object in the world.
+    // The hit() function takes the ray, a minimum distance of 0, and a maximum distance of infinity.
+    // If an intersection is found, it updates rec with hit details (such as point and normal) and returns true.
+    if (world.hit(r, interval(0, infinity), rec)) {
+        return 0.5 * (rec.normal + color(1,1,1));
     }
 
     vec3 unitDirection = unitVector(r.direction());
@@ -96,6 +102,13 @@ int main() {
     // Calculate the image height and ensire that its atleast 1
     int imageHeight = int(imageWidth / aspectRatio);
     imageHeight = (imageHeight < 1) ? 1 : imageHeight;
+
+    // World
+
+    hittableList world;
+
+    world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+    world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
 
     // Camera 
     auto focalLength = 1.0;
@@ -133,7 +146,7 @@ int main() {
         auto rayDirection = pixelCenter - cameraCenter;
         ray r(cameraCenter, rayDirection);
 
-        color pixelColor = rayColor(r);
+        color pixelColor = rayColor(r, world);
         writeColor(std::cout, pixelColor);
         // Color Utility Function that writes a single pixel color out to the std output stream
             // auto pixelColor = color(double(i)/(imageWidth-1), double(j)/(imageHeight-1), 0);

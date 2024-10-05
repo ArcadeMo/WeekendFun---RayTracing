@@ -2,7 +2,6 @@
 #define SPHERE_H
 
 #include "hittable.h"
-#include "vec3.h"
 
 // Defines a sphere class that inherits from hittable, making it a specific type of object that a ray can hit
 class sphere : public hittable {
@@ -11,7 +10,7 @@ public:
     sphere(const point3& center, double radius) : center(center), radius(std::fmax(0, radius)) {}
 
     // Overrides the hit function from the hittable base class to determine if the ray hits the sphere
-    bool hit(const ray& r, double raytMin, double raytMax, hitRecord& rec) const override {
+    bool hit(const ray& r, interval rayT, hitRecord& rec) const override {
         // oc is the vector from the ray's origin to the spheres center 
         vec3 oc = center - r.origin();
         // a is the squared length of the ray's direction vector
@@ -31,11 +30,11 @@ public:
         // Find the nearest root that lies in the acceptable range (t value)
         auto root = (h - sqrtD) / a;
         // Check if the root is outside the valid range, if so try another root
-        if (root <= raytMin || raytMax <= root) {
+        if (!rayT.surrounds(root)) {
             // Calculates the second possible intersection
             root = (h + sqrtD) / a;
             // If this root is also out of range, return false since there is not valid intersection
-            if (root <= raytMin || raytMax <= root)
+            if (!rayT.surrounds(root))
                 return false;
         }
 

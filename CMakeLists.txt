@@ -13,3 +13,4 @@ add_executable(WeekendfunRayTracing ${SOURCES})
 
 # Specify the SDK path if needed
 set(CMAKE_OSX_SYSROOT "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk")
+
