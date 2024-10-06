@@ -140,8 +140,13 @@ private:
 
         // If the ray hits an object, the function returns a color based on the object's surface normal
         if (world.hit(r, interval(0, infinity), rec)) {
-            // Calculates the hit color as a shade based on the surface normal
-            return 0.5 * (rec.normal + color(1,1,1));
+            // Generates a random direction vector that lies within the hemisphere oriented around the surface normal rec.normal
+            // rec.normal is the normal vector at the point of intersection (rec.p), and the function randomOnHemisphere() ensures that the random direction is within the hemisphere pointing away from the surface
+            vec3 direction = randomOnHemisphere(rec.normal);
+            // Casts a new ray from the intersection point rec.p in the direction generated from the hemisphere around the surface normal
+            // Calls the rayColor() function to compute the color of this new ray as it interacts with the world
+            // The result is multiplied by 0.5 to darken the color, simulating light bouncing off the surface. This often models diffuse reflection, where rays bounce randomly off surfaces and lose energy (color intensity) with each bounce
+            return 0.5 * rayColor(ray(rec.p, direction), world);
         }
 
         // Computes the unit vector of the ray direction

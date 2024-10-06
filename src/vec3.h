@@ -55,6 +55,19 @@ class vec3 {
     double squaredLength() const {
         return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
     }
+
+    // (First Overload) Function that generates a random vec3 object where each component (x,y,z) is a random double value between 0 and 1; static so can't be called outside vec3
+    static vec3 random() {
+        // Each call to randomDouble() returns a value between 0.0 and 1.0, so 3 random components
+        return vec3(randomDouble(), randomDouble(), randomDouble());
+    }
+
+    // (Second Overload) This overload generates a random vec3 object where each component is a random double value with a specified range [min,max]
+    // The range for the random numbers is determined by the min and max parameters
+    static vec3 random(double min, double max) {
+        // Each call returns a random value between min and max
+        return vec3(randomDouble(min,max), randomDouble(min,max), randomDouble(min,max));
+    }
 };
 
 // Create an alias for vec3 for geometric clarity 
@@ -109,6 +122,36 @@ inline vec3 cross(const vec3& u, const vec3& v) {
 // Returns a unit vector (vector with length 1) pointing in the same direction as v 
 inline vec3 unitVector(const vec3& v) {
     return v / v.length();
+}
+
+// Function generates a random vec3 that lies within or on the surface of a unit sphere, the vector is returned as a unit vector(normalized to a length of 1)
+inline vec3 randomUnitVector() {
+    // Loop that continuously generates random vectors until one is found that satisfies the condition to be inside the unit sphere
+    while (true) {
+        // Calls the random function to generate a random vector p; ensures that the vector lies within the cube that ranges (-1,-1,-1) to (1,1,1)
+        auto p = vec3::random(-1,1);
+        // Calculates the squared length of vector p which is the same as taking the dot product of the vector with itself ((p.x^2 + p.y^2 + p.z^2) 
+        auto lensQ = p.squaredLength();
+        // Exclude near-zero vectors to avoid numerical instability during normalization
+        if (1e-160 < lensQ && lensQ <= 1)
+        // If the vector p satisfies the condition, it is normalized to have a length of exactly 1 by dividing it by its actual length (sqrt(lensQ)), the function returns the normalized unit vector, ensuring it lies on the surface of the unit sphere.
+            return p / sqrt(lensQ);
+    }
+}
+
+// Function that generates a random vec3 that lies on the hemisphere oriented around a given normal vector
+inline vec3 randomOnHemisphere(const vec3& normal) {
+    // Calls the randomUnitVector function to generate a random unit vector onUnitSphere on the surface
+    vec3 onUnitSphere = randomUnitVector();
+    // Computes the dot product of the random vector and the given normal
+    // The dot product checks whether the angle between the vectors is less than 90 degrees(random vector points in the same general direction as the normal)
+    // If the dot product is positive, the random vector lies in the same hemisphere as the normal
+    if (dot(onUnitSphere, normal) > 0.0)
+        // If the random vector is in the same hemisphere as the normal, return the vector as is
+        return onUnitSphere;
+    else
+        // Else flip the vector by negating it, ensuring it lies in the hemisphere aligned with the normal 
+        return -onUnitSphere;
 }
 
 #endif
