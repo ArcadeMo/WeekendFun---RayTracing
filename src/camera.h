@@ -10,7 +10,10 @@ public:
     double aspectRatio = 1.0;
 
     // Width of the rendered image in pixels
-    int    imageWidth = 100;
+    int imageWidth = 100;
+
+    // Count of random samples for each pixel
+    int samplesPerPixel = 10;
 
     // Main rendering function that generates the image by shooting rays into the world, takes a reference to the hittable world(contains all objects in the scene)
     void render(const hittable& world) {
@@ -26,6 +29,7 @@ public:
             std::clog << "\rScanlines remaining: " << (imageHeight - j) << ' ' << std::flush;
             // Inner loop that iterates over each picel in the current row from left to right
             for (int i = 0; i < imageWidth; i++) {
+                /* Old way to color objects in the rend 
                 // Calculates the center of the current pixel in 3D space
                 auto pixelCenter = pixel00Location + (i * pixelDeltaU) + (j * pixelDeltaV);
                 // Computes the direction of the ray for this pixel (from the camera center to the pixel)
@@ -36,7 +40,19 @@ public:
                 // Computes the color for the ray by determining whether it hits any objects in the world
                 color pixelColor = rayColor(r, world);
                 // Writes the pixel's color to the std output in the PPM format
-                writeColor(std::cout, pixelColor);
+                writeColor(std::cout, pixelColor); */
+                // Initializes a color object pixelColor with all components set to 0 (black)
+                color pixelColor(0,0,0);
+                // Loop that iterates samplesPerPixel times to gather multiple samples for anti-aliasing; samplesPerPixel determines how many rays are shot through each pixel for more accurate color representation and smoothing
+                for (int sample = 0; sample < samplesPerPixel; sample++) {
+                    // Generates a new ray r for the current pixel (i,j)
+                    ray r = getRay(i, j);
+                    // Calls the rayColor() which returns the color for the ray after checking for intersections in the world
+                    // The returned color is added to pixelColor, accumulating the color contributions from each sample
+                    pixelColor += rayColor(r, world);
+                }
+                // Scales the accumulated pixelColor by pixelSampleScale and writes the final averaged color to the output stream in PPM format using writeColor(). The result is the final color for the pixel after multiple samples have been processed
+                writeColor(std::cout, pixelSampleScale * pixelColor);
             }
         }
         // Logs a message indicating that rendering is complete
@@ -45,6 +61,8 @@ public:
 
 private: 
     int imageHeight;
+    // Color scale factor for a sum  of pixel samples
+    double pixelSampleScale;
     point3 center;
     // 3D coordinates of the upper left corner of the image's first pixel
     point3 pixel00Location;
@@ -58,6 +76,10 @@ private:
         // Calculates the height of the image based on the width and aspect ratio
         imageHeight = int(imageWidth / aspectRatio);
         imageHeight = (imageHeight < 1) ? 1 : imageHeight;
+
+        // Calculates the scale factor used to average the color values across multiple samples per pixel
+        // samplesPerPixel is the number of rays(samples) shot through each pixel and dividing 1 by this number gives the factor to scale the accumulated color values to get the average
+        pixelSampleScale = 1.0 / samplesPerPixel;
 
         // Sets the camera's position at the origin (0,0,0)
         center = point3(0,0,0);
@@ -82,6 +104,33 @@ private:
         // Determines the location of the first pixel in the top left corner of the image
         auto viewportUpperLeft =  center - vec3(0,0, focalLength) - viewportU/2 - viewportV/2;
         pixel00Location = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
+    }
+
+    // Function that generates a ray to be cast through the current pixel(i,j)
+    ray getRay(int i, int j) const {
+        // Calls sampleSquare() to get a random offset within the pixel for anti-aliasing
+        // The offset ensures that rays are slightly jittered inside the pixel to smooth out edges and create a more smooth image
+        auto offset = sampleSquare();
+        // Calculates the location of the current pixel sample in a 3D space
+        // Takes the top left corner of the image and moves horziontally based on pixel index i and random x offset and moves vertically based on index j and random y offset
+        auto pixelSample = pixel00Location
+                         + ((i + offset.x()) * pixelDeltaU)
+                         + ((j + offset.y()) * pixelDeltaV);
+        // Sets the ray's origin to the camera's center where all rays are shot from
+        auto rayOrigin = center;
+        // Returns the rays direction by subtracting the ray's origin from the sample's position in 3D space
+        auto rayDirection = pixelSample - rayOrigin;
+
+        // Returns a new ray object with the calculated origin and direction
+        return ray(rayOrigin, rayDirection);
+    }
+
+    // Function that returns a random offset within the square of the pixel for anti-aliasing
+    vec3  sampleSquare() const {
+        // Generates a random 2D vector within the range [-0.5,0.5] for both x and y directions
+        // This random offset is used to jitter the ray's position within the pixel to provide anti-aliasing and smooth the rendered image
+        // The z component is set to 0 as this offset is in 2D screen space
+        return vec3(randomDouble() - 0.5, randomDouble() - 0.5, 0);
     }
 
     // Computes the color for a given ray r by checking for intersections with objects in the world

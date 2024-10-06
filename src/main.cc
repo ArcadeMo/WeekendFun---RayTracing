@@ -177,6 +177,8 @@ int main() {
     // Sets the width of the image to 400 pixels. The height is calculated automatically based on the aspect ratio
     cam.imageWidth = 400;
 
+    cam.samplesPerPixel = 100;
+
     // Render Setup
     // Calls the render function on the cam object to begin rendering the scene
     // The world object is passed as a parameter, containing all the objects to render

@@ -28,6 +28,16 @@ public:
         return min < x && x < max;
     }
 
+    // Function that clamps the value x within the range [min,max]; if x is outside the range, it will be set to either min or max value
+    double clamp(double x) const {
+        // If x is less than the min value, the function returns min,  clamping x to the lower bound
+        if (x < min) return min;
+        // If x is greater than max value, the function returns max, clamping x to the upper bound
+        if (x > max) return max;
+        // If x is within the range [min,max], the function returns x without modifiying it
+        return x;
+    }
+
     // Declares two static constants for commonly used intervals
     static const interval empty, universe;
 };
