@@ -15,6 +15,9 @@ public:
     // Count of random samples for each pixel
     int samplesPerPixel = 10;
 
+    // Maximum number of ray bounces into scene
+    int maxDepth = 10; 
+
     // Main rendering function that generates the image by shooting rays into the world, takes a reference to the hittable world(contains all objects in the scene)
     void render(const hittable& world) {
         // Calls a helpher function to set up the camera parameters before rendering begins
@@ -49,7 +52,7 @@ public:
                     ray r = getRay(i, j);
                     // Calls the rayColor() which returns the color for the ray after checking for intersections in the world
                     // The returned color is added to pixelColor, accumulating the color contributions from each sample
-                    pixelColor += rayColor(r, world);
+                    pixelColor += rayColor(r, maxDepth, world);
                 }
                 // Scales the accumulated pixelColor by pixelSampleScale and writes the final averaged color to the output stream in PPM format using writeColor(). The result is the final color for the pixel after multiple samples have been processed
                 writeColor(std::cout, pixelSampleScale * pixelColor);
@@ -134,19 +137,23 @@ private:
     }
 
     // Computes the color for a given ray r by checking for intersections with objects in the world
-    color rayColor(const ray& r, const hittable& world) const {
+    color rayColor(const ray& r, int depth, const hittable& world) const {
+        // Check if we exceeded the ray bounce limit, no more light is gathered, return black if it does
+        if (depth <= 0)
+            return color(0,0,0);
+
         // Creates a hitRecord object rec to store details of a possible hit (intersection) between the ray and any object in the world
         hitRecord rec;
 
         // If the ray hits an object, the function returns a color based on the object's surface normal
-        if (world.hit(r, interval(0, infinity), rec)) {
+        if (world.hit(r, interval(0.001, infinity), rec)) {
             // Generates a random direction vector that lies within the hemisphere oriented around the surface normal rec.normal
-            // rec.normal is the normal vector at the point of intersection (rec.p), and the function randomOnHemisphere() ensures that the random direction is within the hemisphere pointing away from the surface
-            vec3 direction = randomOnHemisphere(rec.normal);
+            // rec.normal is the normal vector at the point of intersection (rec.p), randomUnitVector function randomly generating a vector according to Lambertian distribution, and the function randomOnHemisphere() ensures that the random direction is within the hemisphere pointing away from the surface
+            vec3 direction = rec.normal + randomUnitVector();
             // Casts a new ray from the intersection point rec.p in the direction generated from the hemisphere around the surface normal
             // Calls the rayColor() function to compute the color of this new ray as it interacts with the world
-            // The result is multiplied by 0.5 to darken the color, simulating light bouncing off the surface. This often models diffuse reflection, where rays bounce randomly off surfaces and lose energy (color intensity) with each bounce
-            return 0.5 * rayColor(ray(rec.p, direction), world);
+            // The result is multiplied by 0.1 to darken the color, simulating light bouncing off the surface. This often models diffuse reflection, where rays bounce randomly off surfaces and lose energy (color intensity) with each bounce
+            return 0.1 * rayColor(ray(rec.p, direction), depth - 1, world);
         }
 
         // Computes the unit vector of the ray direction

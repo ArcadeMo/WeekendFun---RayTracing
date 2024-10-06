@@ -178,7 +178,8 @@ int main() {
     cam.imageWidth = 400;
 
     cam.samplesPerPixel = 100;
-
+    cam.maxDepth = 50;
+    
     // Render Setup
     // Calls the render function on the cam object to begin rendering the scene
     // The world object is passed as a parameter, containing all the objects to render
