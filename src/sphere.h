@@ -7,7 +7,7 @@
 class sphere : public hittable {
 public:
     // Constructor initializes center and radius of the sphere; uses fmax which returns the maximum of two floating point arguements, ensures the radius is non-negative
-    sphere(const point3& center, double radius) : center(center), radius(std::fmax(0, radius)) {}
+    sphere(const point3& center, double radius, shared_ptr<material> mat) : center(center), radius(std::fmax(0,radius)), mat(mat) {}
 
     // Overrides the hit function from the hittable base class to determine if the ray hits the sphere
     bool hit(const ray& r, interval rayT, hitRecord& rec) const override {
@@ -48,6 +48,8 @@ public:
 
         // Calls setFaceNormal on the hit record to determine where the ray hit the front or back face of the sphere; passes the ray and the outward normal to set the correct normal for the intersection based on the ray's direction
         rec.setFaceNormal(r, outwardNormal);
+
+        rec.mat = mat;
         // Calculate the normal vector at the intersection point, pointing outward from the sphere's surface
             // rec.normal - (rec.p - center) / radius;
 
@@ -57,6 +59,7 @@ public:
 private:
     point3 center;
     double radius;
+    shared_ptr<material> mat;
 };
 
 #endif

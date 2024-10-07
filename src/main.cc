@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "hittable.h"
 #include "hittableList.h"
+#include "material.h"
 #include "sphere.h"
 
 /* Function to determine if a given ray hits a sphere; returns true if the ray intersects the sphere
@@ -164,10 +165,22 @@ int main() {
     // Creates a hittableList object world, which will store all objects in the scene that can be hit by rays
     hittableList world;
 
-    // Adds a small sphere to the world at the position (0,0,-1) with a radius of 0.5
+    // Materials to the objects
+    auto materialGround = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto materialCenter = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+    auto materialLeft = make_shared<metal>(color(0.8, 0.8, 0.8), 0.3);
+    auto materialRight = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
+
+    // Add the materialed objects to the world
+    world.add(make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, materialGround));
+    world.add(make_shared<sphere>(point3(0.0, 0.0, -1.2), 0.5, materialCenter));
+    world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, materialLeft));
+    world.add(make_shared<sphere>(point3(1.0, -0.0, -1.0), 0.5, materialRight));
+
+    /* Old sphere to the world at the position (0,0,-1) with a radius of 0.5
     world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
     // Adds a large sphere with a radius of 100 to the scene centered at (0,-100.5,-1). This sphere acts as the ground
-    world.add(make_shared<sphere>(point3(0, -100.5, -1), 100));
+    world.add(make_shared<sphere>(point3(0, -100.5, -1), 100)); */
 
     // Camera Setup
     // Creates a camera object which wuill handle the rendering process by shooting rays into the scene

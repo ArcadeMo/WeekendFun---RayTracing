@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include "hittable.h"
+#include "material.h"
 
 // Defines a camera class that handles rendering an image by shooting rays into the scene
 class camera {
@@ -147,13 +148,24 @@ private:
 
         // If the ray hits an object, the function returns a color based on the object's surface normal
         if (world.hit(r, interval(0.001, infinity), rec)) {
-            // Generates a random direction vector that lies within the hemisphere oriented around the surface normal rec.normal
+            /* Generates a random direction vector that lies within the hemisphere oriented around the surface normal rec.normal
             // rec.normal is the normal vector at the point of intersection (rec.p), randomUnitVector function randomly generating a vector according to Lambertian distribution, and the function randomOnHemisphere() ensures that the random direction is within the hemisphere pointing away from the surface
             vec3 direction = rec.normal + randomUnitVector();
             // Casts a new ray from the intersection point rec.p in the direction generated from the hemisphere around the surface normal
             // Calls the rayColor() function to compute the color of this new ray as it interacts with the world
             // The result is multiplied by 0.1 to darken the color, simulating light bouncing off the surface. This often models diffuse reflection, where rays bounce randomly off surfaces and lose energy (color intensity) with each bounce
-            return 0.1 * rayColor(ray(rec.p, direction), depth - 1, world);
+            return 0.1 * rayColor(ray(rec.p, direction), depth - 1, world);*/
+            // Declares a scattered ray which will store the ray after it interacts with the material
+            ray scattered;
+            // Declares a color variable which stores how much light is absorbed or reflected by the material
+            color attenuation;
+            // If scatter returns true it updates the above variables
+            if (rec.mat->scatter(r, rec, attenuation, scattered))
+                // Recrusively calls rayColor for the scattered ray reducing the depth(the remaining ray bounce count)
+                // Multiplies the resulting color by attenuation to apply the material's reflectivity or absorption
+                return attenuation * rayColor(scattered, depth - 1, world);
+            // Return black if the ray isn't scattered indicating no light is reflected
+            return color(0,0,0);
         }
 
         // Computes the unit vector of the ray direction

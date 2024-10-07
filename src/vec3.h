@@ -56,6 +56,14 @@ class vec3 {
         return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
     }
 
+    // Checks if the vector is close to zero in all dimensions(x,y,z)
+    bool nearZero() const {
+        // Sets a small threshold value s to define "near zero"
+        auto s = 1e-8;
+        // Uses the absolute value function fabs to check if each component of the vector is smaller than s; returns true if all components are nearly zero
+        return (std::fabs(e[0]) < s) && (std::fabs(e[1]) < s) && (std::fabs(e[2]) < s);
+    }
+
     // (First Overload) Function that generates a random vec3 object where each component (x,y,z) is a random double value between 0 and 1; static so can't be called outside vec3
     static vec3 random() {
         // Each call to randomDouble() returns a value between 0.0 and 1.0, so 3 random components
@@ -152,6 +160,12 @@ inline vec3 randomOnHemisphere(const vec3& normal) {
     else
         // Else flip the vector by negating it, ensuring it lies in the hemisphere aligned with the normal 
         return -onUnitSphere;
+}
+
+// Defines a function that calculates the reflection of vector v off a surface with normal n
+inline vec3 reflect(const vec3& v, const vec3& n) {
+    // Reflection formula: subtracts twice the projection of v onto n from v resulting in the reflected vector
+    return v - 2 * dot(v,n) * n;
 }
 
 #endif

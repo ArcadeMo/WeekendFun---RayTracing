@@ -1,6 +1,8 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
+class material;
+
 // Defines a class to store informatiuon about a ray-object intersection
 class hitRecord { 
 public: 
@@ -8,6 +10,9 @@ public:
     point3 p;
     // normal represents the surface normal at the intersection point
     vec3 normal;
+
+    shared_ptr<material> mat;
+    
     // t stores the t parameter value along the ray where the intersection occurs; which can be used to calculate the exact hit point
     double t;
     // bool variable indicating whether the intersection point lies on the front(outer) side of the surface relative to the ray's direction
