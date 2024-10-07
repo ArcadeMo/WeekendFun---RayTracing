@@ -31,6 +31,12 @@ public:
     // Camera-relative "up" direction
     vec3 vup = vec3(0,1,0);
 
+    // Variation angle of rays through each pixel
+    double defocusAngle = 0;
+
+    // Distance from camera lookfrom point to plane of perfect focus
+    double focusDist = 0;
+
     // Main rendering function that generates the image by shooting rays into the world, takes a reference to the hittable world(contains all objects in the scene)
     void render(const hittable& world) {
         // Calls a helpher function to set up the camera parameters before rendering begins
@@ -88,6 +94,10 @@ private:
     vec3 pixelDeltaV;
     // Camera frame basis vector
     vec3 u, v, w;
+    // Defocus disk horizontal radius
+    vec3 defocusDiskU;
+    // Defocus disk vertical radius
+    vec3 defocusDiskV;
 
     // Initialize function sets up the camera parameters, including the image size, pixel locations, and fov
     void initialize() {
@@ -103,13 +113,13 @@ private:
         center = lookFrom;
 
         // Sets the focal length of the camera, which determines how far objects are from the camera
-        auto focalLength = (lookFrom - lookAt).length();
+            // auto focalLength = (lookFrom - lookAt).length();
         // Converts the vertical field of view (vfov) from degrees to radians, storing it in theta
         auto theta = degreesToRadians(vfov);
         // Calculates the half-height of the viewport by taking the tangent of half the vertical field of view (theta / 2)
         auto h = std::tan(theta/2);
         // Sets the height of the camera's viewport (the visible area); computes the full height of the viewport by multiplying 2 * h by the focal length, which adjusts the height based on the camera's focal length.
-        auto viewportHeight = 2 * h * focalLength;
+        auto viewportHeight = 2 * h * focusDist;
     
         // Calculates the width of the viewport based on the aspect ratio
         auto viewportWidth = viewportHeight * (double(imageWidth)/imageHeight);
@@ -130,8 +140,15 @@ private:
         pixelDeltaV = viewportV / imageHeight;
 
         // Determines the location of the first pixel in the top left corner of the image
-        auto viewportUpperLeft =  center - (focalLength * w) - viewportU/2 - viewportV/2;
+        auto viewportUpperLeft =  center - (focusDist * w) - viewportU/2 - viewportV/2;
         pixel00Location = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
+
+        // Calculate the camera defocus disk basis vectors (the area simulating camera lens blur)
+        auto defocusRadius = focusDist * std::tan(degreesToRadians(defocusAngle / 2));
+
+        // Scales the camera's horizontal and vertical vectors by the defcus radius to get the basis vector for the defocus disk
+        defocusDiskU = u * defocusRadius;
+        defocusDiskV = v * defocusRadius;
     }
 
     // Function that generates a ray to be cast through the current pixel(i,j)
@@ -144,8 +161,8 @@ private:
         auto pixelSample = pixel00Location
                          + ((i + offset.x()) * pixelDeltaU)
                          + ((j + offset.y()) * pixelDeltaV);
-        // Sets the ray's origin to the camera's center where all rays are shot from
-        auto rayOrigin = center;
+        // Sets the ray's origin to the camera's lens where all rays are shot from
+        auto rayOrigin = (defocusAngle <= 0) ? center : defocusDiskSample();
         // Returns the rays direction by subtracting the ray's origin from the sample's position in 3D space
         auto rayDirection = pixelSample - rayOrigin;
 
@@ -159,6 +176,15 @@ private:
         // This random offset is used to jitter the ray's position within the pixel to provide anti-aliasing and smooth the rendered image
         // The z component is set to 0 as this offset is in 2D screen space
         return vec3(randomDouble() - 0.5, randomDouble() - 0.5, 0);
+    }
+
+    // Function returns a random point within the camera's defocus disk, simulating depth of field blur
+    point3 defocusDiskSample() const {
+        // Generates a random point p inside a unit disk using the randomInUnitDisk();
+        auto p = randomInUnitDisk();
+        // Calculates the sampled point in the defocus disk by scaling p's x and y components by the defocus disk's horizontal (defocusDiskU) and vertical (defocusDiskV) vectors, respectively, and then adds this to the camera's center
+        // This simulates a random offset within the defocus disk for depth-of-field effects
+        return center + (p[0] * defocusDiskU) + (p[1] * defocusDiskV);
     }
 
     // Computes the color for a given ray r by checking for intersections with objects in the world

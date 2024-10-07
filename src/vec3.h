@@ -181,4 +181,17 @@ inline vec3 refract(const vec3& uv, const vec3& n, double etaiOverEtat) {
     return rPerp + rParallel;
 }
 
+// Generates a random 2D vector inside a unit disk (circle with radius 1 in the x-y plane)
+inline vec3 randomInUnitDisk() {
+    // Continuously generates random vectors until one falls inside the unit disk
+    while(true) {
+        // Creates a random 2D vector p with x and y values between -1 and 1 and a z value of 0 (restricted to the x-y plane)
+        auto p = vec3(randomDouble(-1,1), randomDouble(-1,1), 0);
+        // Checks if the vector's squared length is less than 1, ensuring it lies within the unit disk
+        if(p.squaredLength() < 1)
+            // Returns the vector p once it meets the condition of being inside the unit disk
+            return p;
+    }
+}
+
 #endif

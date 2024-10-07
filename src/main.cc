@@ -204,10 +204,14 @@ int main() {
     cam.samplesPerPixel = 100;
     cam.maxDepth = 50;
     
-    cam.vfov = 90;
+    cam.vfov = 25;
     cam.lookFrom = point3(-2,2,1);
     cam.lookAt = point3(0,0,-1);
     cam.vup = vec3(0,1,0);
+
+    cam.defocusAngle = 10.0;
+    cam.focusDist = 3.4;
+
 
     // Render Setup
     // Calls the render function on the cam object to begin rendering the scene
