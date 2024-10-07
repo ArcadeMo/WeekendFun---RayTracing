@@ -19,6 +19,18 @@ public:
     // Maximum number of ray bounces into scene
     int maxDepth = 10; 
 
+    // Vertical view angle (Field of view)
+    double vfov = 90;
+
+    // Point camera is looking from
+    point3 lookFrom = point3(0,0,0);
+
+    // Point camera is looking at
+    point3 lookAt = point3(0,0,-1);
+
+    // Camera-relative "up" direction
+    vec3 vup = vec3(0,1,0);
+
     // Main rendering function that generates the image by shooting rays into the world, takes a reference to the hittable world(contains all objects in the scene)
     void render(const hittable& world) {
         // Calls a helpher function to set up the camera parameters before rendering begins
@@ -74,6 +86,8 @@ private:
     vec3 pixelDeltaU;
     // Vertical offset between adjacent pixels in the image
     vec3 pixelDeltaV;
+    // Camera frame basis vector
+    vec3 u, v, w;
 
     // Initialize function sets up the camera parameters, including the image size, pixel locations, and fov
     void initialize() {
@@ -86,19 +100,29 @@ private:
         pixelSampleScale = 1.0 / samplesPerPixel;
 
         // Sets the camera's position at the origin (0,0,0)
-        center = point3(0,0,0);
+        center = lookFrom;
 
         // Sets the focal length of the camera, which determines how far objects are from the camera
-        auto focalLength = 1.0;
-        // Sets the height of the camera's viewport (the visible area)
-        auto viewportHeight = 2.0;
+        auto focalLength = (lookFrom - lookAt).length();
+        // Converts the vertical field of view (vfov) from degrees to radians, storing it in theta
+        auto theta = degreesToRadians(vfov);
+        // Calculates the half-height of the viewport by taking the tangent of half the vertical field of view (theta / 2)
+        auto h = std::tan(theta/2);
+        // Sets the height of the camera's viewport (the visible area); computes the full height of the viewport by multiplying 2 * h by the focal length, which adjusts the height based on the camera's focal length.
+        auto viewportHeight = 2 * h * focalLength;
+    
         // Calculates the width of the viewport based on the aspect ratio
         auto viewportWidth = viewportHeight * (double(imageWidth)/imageHeight);
 
-        // Defines the horizontal direction of the viewport(width-wise)
-        auto viewportU = vec3(viewportWidth, 0, 0);
-        // Defines the vertical direction of the viewport(height-wise)
-        auto viewportV = vec3(0, -viewportHeight, 0);
+        // Calculate the u,v,w unit basis vectors for the camera coordinate frame
+        w = unitVector(lookFrom - lookAt);
+        u = unitVector(cross(vup, w));
+        v = cross(w, u);
+
+        // Defines the horizontal direction of the viewport(width-wise); vector across viewport horizontal edge
+        auto viewportU = viewportWidth * u;
+        // Defines the vertical direction of the viewport(height-wise); vector down viewport vertical edge
+        auto viewportV = viewportHeight * -v;
 
         // Calculates the horizontal spacing between pixels
         pixelDeltaU = viewportU / imageWidth;
@@ -106,7 +130,7 @@ private:
         pixelDeltaV = viewportV / imageHeight;
 
         // Determines the location of the first pixel in the top left corner of the image
-        auto viewportUpperLeft =  center - vec3(0,0, focalLength) - viewportU/2 - viewportV/2;
+        auto viewportUpperLeft =  center - (focalLength * w) - viewportU/2 - viewportV/2;
         pixel00Location = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
     }
 

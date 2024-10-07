@@ -165,24 +165,33 @@ int main() {
     // Creates a hittableList object world, which will store all objects in the scene that can be hit by rays
     hittableList world;
 
-    // Materials to the objects
+    // Testing materials onto the objects
     auto materialGround = make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto materialCenter = make_shared<lambertian>(color(0.1, 0.2, 0.5));
     auto materialLeft = make_shared<dielectric>(1.50);
     auto materialBubble = make_shared<dielectric>(1.00 / 1.50);
-    auto materialRight = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+    auto materialRight = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
 
     // Add the materialed objects to the world
     world.add(make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, materialGround));
     world.add(make_shared<sphere>(point3(0.0, 0.0, -1.2), 0.5, materialCenter));
     world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, materialLeft));
     world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.4, materialBubble));
-    world.add(make_shared<sphere>(point3(1.0, -0.0, -1.0), 0.5, materialRight));
+    world.add(make_shared<sphere>(point3(1.0, -0.0, -1.0), 0.5, materialRight)); 
 
     /* Old sphere to the world at the position (0,0,-1) with a radius of 0.5
     world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
     // Adds a large sphere with a radius of 100 to the scene centered at (0,-100.5,-1). This sphere acts as the ground
     world.add(make_shared<sphere>(point3(0, -100.5, -1), 100)); */
+
+    /* // Testing Positionable Camera
+    auto R = std::cos(pi/4);
+
+    auto materialLeft  = make_shared<lambertian>(color(0,0,1));
+    auto materialRight = make_shared<lambertian>(color(1,0,0));
+
+    world.add(make_shared<sphere>(point3(-R, 0, -1), R, materialLeft));
+    world.add(make_shared<sphere>(point3( R, 0, -1), R, materialRight)); */
 
     // Camera Setup
     // Creates a camera object which wuill handle the rendering process by shooting rays into the scene
@@ -195,6 +204,11 @@ int main() {
     cam.samplesPerPixel = 100;
     cam.maxDepth = 50;
     
+    cam.vfov = 90;
+    cam.lookFrom = point3(-2,2,1);
+    cam.lookAt = point3(0,0,-1);
+    cam.vup = vec3(0,1,0);
+
     // Render Setup
     // Calls the render function on the cam object to begin rendering the scene
     // The world object is passed as a parameter, containing all the objects to render
