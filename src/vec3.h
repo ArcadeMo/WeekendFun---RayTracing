@@ -168,4 +168,17 @@ inline vec3 reflect(const vec3& v, const vec3& n) {
     return v - 2 * dot(v,n) * n;
 }
 
+// Defines a function to caluclate the refraction of a vector uv as it passes through a surface with a normal n, based on the ration of refractive indices (etaiOverEtat)
+inline vec3 refract(const vec3& uv, const vec3& n, double etaiOverEtat) {
+    // Computes the cosine of the angle between the incoming vector uv and the surface normal n, fmin ensures the result does not exceed 1, clamping the value for stability
+    auto cosTheta = std::fmin(dot(-uv, n), 1.0);
+    // Calculates the perpendicular component (rPerp) of the refracted ray using Snell's law
+    // etaiOverEtat scales the refracted direction based on the refractive indices
+    vec3 rPerp =  etaiOverEtat * (uv + cosTheta * n);
+    // Calculates the parallel component (rParallel) of the refracted ray; ensures the total length of the refracted ray is 1 by subtracting the squared length of rPerp from 1.0, taking the square root to find the parallel component
+    vec3 rParallel = -std::sqrt(std::fabs(1.0 - rPerp.squaredLength())) * n;
+    // Returns the sum of the perpendicular and parallel components, forming the complete refracted ray. This vector represents the direction of the light as it passes through the surface
+    return rPerp + rParallel;
+}
+
 #endif

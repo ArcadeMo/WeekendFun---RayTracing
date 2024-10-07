@@ -80,6 +80,67 @@ private:
     double fuzz;
 };
 
+// This class represents a dielectric material, such as glass or water, which refracts light
+class dielectric : public material {
+public:
+    // Constructor that initializes the material with a specific refractionIndex, which represents how light bends when passing through the material
+    dielectric(double refractionIndex) : refractionIndex(refractionIndex) {}
+
+    bool scatter(const ray& rIncoming, const hitRecord& rec, color& attenuation, ray& scattered)
+    const override {
+        // Sets attenuation to white, meaning the material does not absorb light; it only refracts or reflects it
+        attenuation = color(1.0, 1.0, 1.0);
+        // Determines the ratio of refractive indices (ri) based on whether the ray is entering or exiting the material
+        // If the ray is hitting the front face of the surface, ri is set to the inverse of the refractionIndex. Otherwise, it uses the material’s refractionIndex.
+        double ri = rec.frontFace ? (1.0/refractionIndex) : refractionIndex;
+        // Normalizes the incoming ray’s direction, creating a unit vector unitDirection
+        vec3 unitDirection = unitVector(rIncoming.direction());
+        
+        // Calculates the cosine of the angle between the negative of the incoming ray direction (-unitDirection) and the surface normal (rec.normal)
+        // Uses std::fmin to clamp the result to a maximum of 1.0, ensuring numerical stability
+        double cosTheta = std::fmin(dot(-unitDirection, rec.normal), 1.0);
+        // Calculates the sine of the angle using the Pythagorean identity: sin^2(θ) + cos^2(θ) = 1. This is used to determine the possibility of refraction
+        double sinTheta = std::sqrt(1.0 - cosTheta*cosTheta);
+
+        // Checks if total internal reflection occurs by comparing ri * sinTheta to 1.0
+        // If ri * sinTheta > 1.0, refraction cannot happen, and the ray will be reflected
+        bool cannotRefract = ri * sinTheta > 1.0;
+        // Declares a variable direction to store the final direction of the scattered ray (either reflected or refracted)
+        vec3 direction;
+
+        // If total internal reflection occurs (cannotRefract is true), the ray will reflect instead of refract; even if refraction is possible, this checks if the reflectance (based on angle and refractive index) is high enough to cause reflection probabilistically (using random_double() to determine randomness)
+        if (cannotRefract || reflectance(cosTheta, ri) > randomDouble())
+            // Sets the ray direction to the reflected direction using the reflect() function, which calculates the reflection based on the incoming direction and surface normal
+            direction = reflect(unitDirection, rec.normal);
+        else
+            // Else set the direction by calculating the refracted ray direction using Snell's Law, based on the incoming ray's direction, the surface normal, and the refractive index ratio ri
+            direction = refract(unitDirection, rec.normal, ri);
+
+        // Constructs the scattered ray starting at the intersection point (rec.p) and traveling in the chosen direction (either reflected or refracted)
+        scattered = ray(rec.p, direction);
+        // Returns true to indicate the ray has been successfully refracted by the dielectric material
+        return true;
+    }
+
+private:
+    // The refractive index of the material, which determines how much the light bends when entering or exiting the material 
+    double refractionIndex;
+
+    // A static function that calculates the reflectance of light using Schlick’s approximation; cosine is the cosine of the angle between the incoming ray and the surface normal
+    static double reflectance(double cosine, double refractionIndex) {
+    // Use Schlick's approximation for reflectance
+    // Calculates the base reflectance r0 when the incoming light is perpendicular to the surface
+    // This formula is based on the ratio of refractive indices of the two media
+    auto r0 = (1 - refractionIndex) / (1 + refractionIndex);
+    // Squares r0 to obtain the reflectance at normal incidence (angle = 0)
+    r0 = r0*r0;
+    // Uses Schlick's approximation to adjust the reflectance based on the angle of incidence (represented by cosine) 
+    // The higher the angle (closer to grazing), the more reflective the surface becomes
+    // The term std::pow((1 - cosine), 5) makes the reflectance approach 1 as the angle increases
+    return r0 + (1-r0)*std::pow((1 - cosine), 5);
+}
+};
+
 
     // Derived material classes like diffuse or reflective materials will override this function to implement specific scattering behaviors
 #endif
